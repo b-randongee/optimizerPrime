@@ -90,11 +90,57 @@ Configure Tailwind CSS 3 with PostCSS and Autoprefixer.
 
 ---
 
+### ADR-004: JSON File Over UI for Cost Editing
+**Date**: 2026-01-15
+**Status**: ✅ Implemented
+
+**Context**:
+User requested a way to edit all construction cost values in one place. Initial plan was to build a hamburger menu UI with editable inputs.
+
+**Alternatives Considered**:
+1. **Hamburger Menu UI** - Settings page with all cost inputs in the browser
+   - Pros: Visual, user-friendly GUI
+   - Cons: More code to maintain, UI can become stale, harder to bulk edit
+2. **JSON Config File** - External `costs.json` editable via terminal
+   - Pros: Simple, version-controlled, easy bulk edits, no UI maintenance
+   - Cons: Requires terminal access, not as "friendly" for non-technical users
+3. **Environment Variables** - Costs in .env file
+   - Pros: Standard pattern
+   - Cons: Poor for 40+ values, no structure, harder to organize
+
+**Decision**: Use external JSON configuration file (`src/costs.json`)
+
+**Rationale**:
+- **Simplicity**: Single file, no UI code needed
+- **Version Control**: Changes are tracked in git
+- **Hot Reload**: Vite automatically reloads on JSON changes
+- **Bulk Edits**: Easy to modify multiple values at once
+- **Documentation**: Can add comments and structure in JSON
+- **Terminal-First**: Matches user's workflow preference ("give me a database... I can edit via terminal")
+- **Maintainability**: No UI to keep in sync with data structure
+
+**Consequences**:
+- Positive: Zero UI maintenance, instant edits, git-trackable changes
+- Positive: Can use any editor (nano, vim, VS Code, sed, jq)
+- Negative: Requires terminal access (acceptable for this user)
+- Negative: No validation UI (but JSON schema could be added)
+
+**Implementation**:
+- Created `src/costs.json` with 4 sections (demolition, interior, restroom, exterior)
+- App.jsx imports via `import costsData from "./costs.json"`
+- Added comprehensive docs in README.md, COSTS_README.md, and CLAUDE.md
+- Hot-reload works automatically via Vite
+
+**Related Decisions**: ADR-002 (Vite enables hot-reload for JSON imports)
+
+---
+
 ## Quick Decisions
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | 2026-01-15 | GCS for hosting | Simple, cost-effective static site hosting |
+| 2026-01-15 | JSON file over hamburger UI | Terminal-editable, version-controlled, simpler maintenance |
 
 ---
 

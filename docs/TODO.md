@@ -54,3 +54,12 @@
 - [x] 2026-01-15: Deploy to GCS successfully
 - [x] 2026-01-15: Verify live site is accessible
 - [x] 2026-01-15: Document deployment process and patterns
+- [x] 2026-01-15: Extract cost constants to src/costs.json for terminal editing
+- [x] 2026-01-15: Refactor App.jsx to import costs from JSON
+- [x] 2026-01-15: Create README.md with project overview and cost editing guide
+- [x] 2026-01-15: Create COSTS_README.md with detailed cost structure docs
+- [x] 2026-01-15: Update CLAUDE.md with cost configuration quick reference
+- [x] 2026-01-15: Document ADR-004 (JSON file over hamburger UI decision)
+- [x] 2026-01-15: Document external JSON configuration pattern
+- [x] 2026-01-15: Commit changes to git and push to remote
+- [x] 2026-01-15: Deploy updated dashboard to GCS
