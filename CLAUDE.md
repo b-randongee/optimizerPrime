@@ -27,8 +27,8 @@
 ## Git Configuration
 ⚠️ **CRITICAL**: Claude CANNOT push until repo/branch is verified.
 
-- **Expected Remote**: [Not yet configured - will set up during first commit]
-- **Primary Branch**: [To be determined - likely main]
+- **Expected Remote**: origin → https://github.com/b-randongee/optimizerPrime.git
+- **Primary Branch**: main
 
 ## Commands
 ```bash
