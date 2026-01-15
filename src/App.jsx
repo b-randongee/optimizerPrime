@@ -10,34 +10,29 @@ import {
   Sparkles,
   SlidersHorizontal,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
 
 // Dummy pricing model
-// Levels: 0 = As-Is, 1 = Refresh, 2 = Standard, 3 = Premium
+// Levels: 0 = As-Is, 1 = Refresh, 2 = Upgrade, 3 = Alpha
 const LEVELS = [
   { value: 0, label: "As-Is", tone: "bg-slate-100 text-slate-700 border-slate-200" },
-  { value: 1, label: "Refresh", tone: "bg-blue-50 text-blue-700 border-blue-200" },
-  { value: 2, label: "Standard", tone: "bg-amber-50 text-amber-800 border-amber-200" },
-  { value: 3, label: "Premium", tone: "bg-emerald-50 text-emerald-800 border-emerald-200" },
+  { value: 1, label: "Refresh", tone: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { value: 2, label: "Upgrade", tone: "bg-amber-50 text-amber-700 border-amber-200" },
+  { value: 3, label: "Alpha", tone: "bg-blue-50 text-blue-700 border-blue-200" },
 ];
 
 const ROOM_TYPES = [
-  { key: "classroom", label: "Classroom", icon: "📚" },
+  { key: "learningroom", label: "Learning Room", icon: "📚" },
   { key: "office", label: "Office", icon: "🧑‍💻" },
-  { key: "corridor", label: "Corridor", icon: "🚶" },
+  { key: "hallway", label: "Hallway", icon: "🚶" },
   { key: "lobby", label: "Lobby", icon: "🛎️" },
   { key: "cafeteria", label: "Cafeteria", icon: "🍽️" },
-  { key: "lab", label: "Lab", icon: "🧪" },
+  { key: "limitlessroom", label: "Limitless Room", icon: "🧪" },
   { key: "restroom", label: "Restroom", icon: "🚻" },
-  { key: "mechanical", label: "Mechanical", icon: "🛠️" },
+  { key: "rocketroom", label: "Rocket Room", icon: "🚀" },
+  { key: "conferenceroom", label: "Conference Room", icon: "💼" },
+  { key: "breakroom", label: "Break Room", icon: "☕" },
+  { key: "multipurpose", label: "Multi-Purpose Room", icon: "🎯" },
+  { key: "otherroom", label: "Other Room", icon: "🏢" },
 ];
 
 // Component cost adders per sqft by level
@@ -83,6 +78,12 @@ const COMPONENTS = [
     name: "Casework",
     helper: "Storage, built-ins, counters",
     costs: [0, 2, 6, 12],
+  },
+  {
+    key: "furniture",
+    name: "Furniture",
+    helper: "Desks, chairs, tables, fixtures",
+    costs: [0, 5, 12, 22],
   },
 ];
 
@@ -153,39 +154,27 @@ function MiniKey({ label, value }) {
   );
 }
 
-function SmartTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-      <div className="text-xs font-semibold text-slate-500">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-slate-900">{currency(payload[0].value)}</div>
-    </div>
-  );
-}
 
 const BUILDING_PRESETS = [
   {
-    key: "small_school",
-    name: "Small school wing",
-    rooms: [
-      { name: "Classroom A", type: "classroom", sqft: 900, hasRestroom: false },
-      { name: "Classroom B", type: "classroom", sqft: 900, hasRestroom: false },
-      { name: "Office", type: "office", sqft: 220, hasRestroom: false },
-      { name: "Lobby", type: "lobby", sqft: 450, hasRestroom: false },
-      { name: "Restroom", type: "restroom", sqft: 180, hasRestroom: false },
-      { name: "Corridor", type: "corridor", sqft: 700, hasRestroom: false },
-    ],
+    key: "asis",
+    name: "As-Is",
+    level: 0,
   },
   {
-    key: "office_suite",
-    name: "Office suite",
-    rooms: [
-      { name: "Open office", type: "office", sqft: 1800, hasRestroom: false },
-      { name: "Conference", type: "office", sqft: 420, hasRestroom: false },
-      { name: "Kitchenette", type: "cafeteria", sqft: 260, hasRestroom: false },
-      { name: "Restroom", type: "restroom", sqft: 140, hasRestroom: false },
-      { name: "Corridor", type: "corridor", sqft: 520, hasRestroom: false },
-    ],
+    key: "refresh",
+    name: "Refresh",
+    level: 1,
+  },
+  {
+    key: "upgrade",
+    name: "Upgrade",
+    level: 2,
+  },
+  {
+    key: "alpha",
+    name: "Alpha Spec",
+    level: 3,
   },
 ];
 
@@ -193,9 +182,9 @@ function defaultRoom(overrides = {}) {
   return {
     id: uid(),
     name: "Room",
-    type: "classroom",
+    type: "learningroom",
     sqft: 800,
-    hasRestroom: false,
+    restroomCount: 0,
     restroomArea: 60,
     // component levels
     levels: Object.fromEntries(COMPONENTS.map((c) => [c.key, 1])),
@@ -206,13 +195,16 @@ function defaultRoom(overrides = {}) {
 
 function getIntensityByType(type) {
   // Heuristic multipliers for the same component spec
-  // Corridors and mechanical rooms typically have less finish intensity.
-  if (type === "corridor") return 0.8;
-  if (type === "mechanical") return 0.6;
+  // Hallways and rocket rooms typically have less finish intensity.
+  if (type === "hallway") return 0.8;
+  if (type === "rocketroom") return 0.6;
   if (type === "lobby") return 1.15;
-  if (type === "lab") return 1.25;
+  if (type === "limitlessroom") return 1.25;
   if (type === "cafeteria") return 1.1;
   if (type === "restroom") return 1.0;
+  if (type === "conferenceroom") return 1.1;
+  if (type === "breakroom") return 0.9;
+  if (type === "multipurpose") return 1.0;
   return 1.0;
 }
 
@@ -227,9 +219,10 @@ function roomCost(room) {
 
   // Restroom logic
   // If room is restroom, restroomSpec applies to entire sqft at restroom intensity.
-  // If room has restroom, restroomSpec applies to restroomArea.
+  // If room has restrooms (count > 0), restroomSpec applies to restroomArea per restroom.
   const rrLvl = clamp(room.restroomSpec ?? 0, 0, 3);
-  const restroomSqft = room.type === "restroom" ? room.sqft : room.hasRestroom ? clamp(room.restroomArea ?? 60, 20, 250) : 0;
+  const restroomCount = room.restroomCount ?? 0;
+  const restroomSqft = room.type === "restroom" ? room.sqft : restroomCount > 0 ? clamp(room.restroomArea ?? 60, 20, 250) * restroomCount : 0;
   const restroomCost = restroomSqft * RESTROOM_COMPONENT.costs[rrLvl];
 
   const mainArea = room.type === "restroom" ? 0 : room.sqft;
@@ -254,7 +247,7 @@ function ComponentRow({ title, helper, value, onChange, costPerSqft, labelOverri
   const text = labelOverride || meta.label;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+    <div className="rounded-2xl border-2 border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -298,8 +291,8 @@ function SoftDivider({ label, icon }) {
 
 export default function App() {
   const [rooms, setRooms] = useState(() => [
-    defaultRoom({ name: "Classroom 101", type: "classroom", sqft: 900, hasRestroom: false }),
-    defaultRoom({ name: "Office", type: "office", sqft: 260, hasRestroom: false }),
+    defaultRoom({ name: "Learning Room 101", type: "learningroom", sqft: 900, restroomCount: 0 }),
+    defaultRoom({ name: "Office", type: "office", sqft: 260, restroomCount: 0 }),
     defaultRoom({ name: "Restroom", type: "restroom", sqft: 160, restroomSpec: 2, levels: Object.fromEntries(COMPONENTS.map((c) => [c.key, 0])) }),
   ]);
 
@@ -307,6 +300,7 @@ export default function App() {
   const [gcOverheadPct, setGcOverheadPct] = useState(14);
   const [escalationPct, setEscalationPct] = useState(3);
   const [designFeePct, setDesignFeePct] = useState(6);
+  const [budget, setBudget] = useState(100000);
 
   const totals = useMemo(() => {
     const direct = rooms.reduce((sum, r) => sum + roomCost(r), 0);
@@ -321,29 +315,16 @@ export default function App() {
     return { direct, design, escalation, gc, contingency, grand, sqft, cpsf };
   }, [rooms, contingencyPct, gcOverheadPct, escalationPct, designFeePct]);
 
-  const chartData = useMemo(() => {
-    return rooms
-      .map((r) => ({
-        name: (r.name || "Room").slice(0, 12),
-        cost: roomCost(r),
-      }))
-      .sort((a, b) => b.cost - a.cost);
-  }, [rooms]);
 
   const applyPreset = (presetKey) => {
     const preset = BUILDING_PRESETS.find((p) => p.key === presetKey);
     if (!preset) return;
-    const next = preset.rooms.map((r) =>
-      defaultRoom({
-        name: r.name,
-        type: r.type,
-        sqft: r.sqft,
-        hasRestroom: r.hasRestroom,
-        levels: Object.fromEntries(COMPONENTS.map((c) => [c.key, r.type === "corridor" ? 1 : 2])),
-        restroomSpec: r.type === "restroom" ? 2 : 0,
-      })
-    );
-    setRooms(next);
+    // Apply the preset level to all rooms
+    setRooms(prev => prev.map(room => ({
+      ...room,
+      levels: Object.fromEntries(COMPONENTS.map((c) => [c.key, preset.level])),
+      restroomSpec: room.type === "restroom" ? preset.level : room.restroomSpec,
+    })));
   };
 
   const addRoom = () => setRooms((prev) => [...prev, defaultRoom({ name: `Room ${prev.length + 1}` })]);
@@ -354,34 +335,20 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <div className="border-b border-slate-200 bg-white">
+      <div className="border-b border-slate-200 bg-emerald-500">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
+            <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/20 text-white shadow-sm backdrop-blur-sm">
               <Building2 className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-lg font-semibold tracking-tight">Construction buildout dashboard</div>
-              <div className="text-sm text-slate-500">
-                Room-by-room estimator using sliders and a transparent cost model
+              <div className="text-lg font-semibold tracking-tight text-white">Optimizer Prime Dashboard</div>
+              <div className="text-sm text-emerald-100">
+                Room-by-room budget-informed designer
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 md:flex">
-              <Sparkles className="h-4 w-4 text-slate-600" />
-              <div className="text-sm font-semibold">Live totals</div>
-              <div className="text-sm text-slate-500">{currency(totals.grand)}</div>
-            </div>
-            <button
-              onClick={addRoom}
-              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
-            >
-              <Plus className="h-4 w-4" />
-              Add room
-            </button>
-          </div>
         </div>
       </div>
 
@@ -430,7 +397,7 @@ export default function App() {
                   const cpsfRoom = room.sqft > 0 ? cost / room.sqft : 0;
 
                   const isRestroomRoom = room.type === "restroom";
-                  const showEmbeddedRestroom = !isRestroomRoom && room.hasRestroom;
+                  const showEmbeddedRestroom = !isRestroomRoom && room.restroomCount > 0;
 
                   return (
                     <motion.div
@@ -440,7 +407,7 @@ export default function App() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ duration: 0.18 }}
-                      className="rounded-3xl border border-slate-200 bg-slate-50 p-4"
+                      className="rounded-3xl border-2 border-emerald-500 bg-slate-50 p-4"
                     >
                       {/* Room header */}
                       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -449,11 +416,11 @@ export default function App() {
                             <span className="text-lg">{typeMeta.icon}</span>
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-2">
                               <input
                                 value={room.name}
                                 onChange={(e) => updateRoom(room.id, { name: e.target.value })}
-                                className="w-full min-w-[220px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-slate-300 md:w-auto"
+                                className="flex-1 min-w-[180px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-slate-300"
                                 aria-label="Room name"
                               />
                               <select
@@ -486,29 +453,31 @@ export default function App() {
                                   onChange={(e) =>
                                     updateRoom(room.id, { sqft: clamp(parseInt(e.target.value || "0", 10), 0, 250000) })
                                   }
-                                  className="w-24 bg-transparent text-sm font-semibold text-slate-900 outline-none"
+                                  className="w-16 bg-transparent text-sm font-semibold text-slate-900 outline-none"
                                   aria-label="Square feet"
                                 />
                                 <div className="text-xs font-semibold text-slate-500">sf</div>
                               </div>
 
                               {!isRestroomRoom && (
-                                <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm">
+                                <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                                  <span className="text-lg">🚻</span>
                                   <input
-                                    type="checkbox"
-                                    checked={room.hasRestroom}
-                                    onChange={(e) => updateRoom(room.id, { hasRestroom: e.target.checked })}
-                                    className="h-4 w-4 rounded border-slate-300"
+                                    type="number"
+                                    min="0"
+                                    max="2"
+                                    value={room.restroomCount}
+                                    onChange={(e) => updateRoom(room.id, { restroomCount: clamp(parseInt(e.target.value || "0", 10), 0, 2) })}
+                                    className="w-12 bg-transparent text-sm font-semibold text-slate-900 outline-none"
+                                    aria-label="Number of restrooms"
                                   />
-                                  Has restroom
-                                </label>
+                                </div>
                               )}
                             </div>
 
-                            <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+                            <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
                               <MiniKey label="Room cost" value={currency(cost)} />
                               <MiniKey label="Cost per sf" value={room.sqft ? `${currency(cpsfRoom)}/sf` : "-"} />
-                              <MiniKey label="Intensity" value={`${Math.round(getIntensityByType(room.type) * 100)}%`} />
                               <MiniKey label="Allowance" value={currency(450 + 0.35 * room.sqft)} />
                             </div>
                           </div>
@@ -516,11 +485,10 @@ export default function App() {
 
                         <button
                           onClick={() => removeRoom(room.id)}
-                          className="inline-flex items-center justify-center gap-2 self-start rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50"
+                          className="inline-flex items-center justify-center self-start rounded-2xl border border-slate-200 bg-white p-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50"
                           aria-label="Remove room"
                         >
                           <Trash2 className="h-4 w-4 text-slate-600" />
-                          Remove
                         </button>
                       </div>
 
@@ -552,12 +520,14 @@ export default function App() {
                           ))
                         )}
 
-                        {showEmbeddedRestroom && (
-                          <div className="md:col-span-2">
-                            <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                        {showEmbeddedRestroom && Array.from({ length: room.restroomCount }).map((_, idx) => (
+                          <div key={`restroom-${idx}`} className="col-span-1 md:col-span-2">
+                            <div className="rounded-2xl border-2 border-slate-200 bg-white p-4">
                               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                 <div>
-                                  <div className="text-sm font-semibold text-slate-900">Embedded restroom</div>
+                                  <div className="text-sm font-semibold text-slate-900">
+                                    Attached restroom {room.restroomCount > 1 ? `#${idx + 1}` : ''}
+                                  </div>
                                   <div className="text-xs text-slate-500">
                                     Applies restroom spec pricing to the restroom area only
                                   </div>
@@ -604,112 +574,22 @@ export default function App() {
                               </div>
                             </div>
                           </div>
-                        )}
+                        ))}
                       </div>
                     </motion.div>
                   );
                 })}
               </AnimatePresence>
-            </div>
-          </div>
 
-          {/* Assumptions */}
-          <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100">
-                <SlidersHorizontal className="h-5 w-5 text-slate-700" />
-              </div>
-              <div>
-                <div className="text-base font-semibold">Project assumptions</div>
-                <div className="text-sm text-slate-500">
-                  These are global multipliers applied after room costs
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold">Design fee</div>
-                    <div className="text-xs text-slate-500">Architecture, MEP engineering, PM</div>
-                  </div>
-                  <div className="text-sm font-semibold">{designFeePct}%</div>
-                </div>
-                <div className="mt-3">
-                  <input
-                    type="range"
-                    className="w-full accent-slate-900"
-                    min={0}
-                    max={12}
-                    step={1}
-                    value={designFeePct}
-                    onChange={(e) => setDesignFeePct(parseInt(e.target.value, 10))}
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold">Escalation</div>
-                    <div className="text-xs text-slate-500">Market drift, lead-time risk</div>
-                  </div>
-                  <div className="text-sm font-semibold">{escalationPct}%</div>
-                </div>
-                <div className="mt-3">
-                  <input
-                    type="range"
-                    className="w-full accent-slate-900"
-                    min={0}
-                    max={10}
-                    step={1}
-                    value={escalationPct}
-                    onChange={(e) => setEscalationPct(parseInt(e.target.value, 10))}
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold">GC overhead + profit</div>
-                    <div className="text-xs text-slate-500">General conditions, supervision</div>
-                  </div>
-                  <div className="text-sm font-semibold">{gcOverheadPct}%</div>
-                </div>
-                <div className="mt-3">
-                  <input
-                    type="range"
-                    className="w-full accent-slate-900"
-                    min={8}
-                    max={25}
-                    step={1}
-                    value={gcOverheadPct}
-                    onChange={(e) => setGcOverheadPct(parseInt(e.target.value, 10))}
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold">Contingency</div>
-                    <div className="text-xs text-slate-500">Unknowns, scope refinement</div>
-                  </div>
-                  <div className="text-sm font-semibold">{contingencyPct}%</div>
-                </div>
-                <div className="mt-3">
-                  <input
-                    type="range"
-                    className="w-full accent-slate-900"
-                    min={0}
-                    max={20}
-                    step={1}
-                    value={contingencyPct}
-                    onChange={(e) => setContingencyPct(parseInt(e.target.value, 10))}
-                  />
-                </div>
+              {/* Add room card */}
+              <div className="rounded-3xl border-2 border-slate-300 bg-white p-8 flex items-center justify-center">
+                <button
+                  onClick={addRoom}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-emerald-500 bg-white px-4 py-2 text-sm font-semibold text-emerald-500 shadow-sm hover:bg-emerald-50"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add room
+                </button>
               </div>
             </div>
           </div>
@@ -731,8 +611,10 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-3xl bg-slate-900 p-5 text-white">
-                <div className="text-sm text-slate-200">Grand total</div>
+              <div className={`mt-4 rounded-3xl p-5 text-white ${
+                totals.grand <= budget ? 'bg-emerald-500' : 'bg-red-600'
+              }`}>
+                <div className="text-sm text-white/80">Grand total</div>
                 <div className="mt-1 text-3xl font-semibold tracking-tight">{currency(totals.grand)}</div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <SegPill text={`${Math.round(totals.sqft).toLocaleString()} sf`} tone="bg-white/10 text-white border-white/15" />
@@ -748,54 +630,174 @@ export default function App() {
                 <MiniKey label="Contingency" value={currency(totals.contingency)} />
                 <MiniKey label="Rooms" value={rooms.length.toString()} />
               </div>
+            </div>
 
-              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="text-sm font-semibold">How to use</div>
-                <ol className="mt-2 list-decimal space-y-1 pl-4 text-sm text-slate-600">
-                  <li>Set each room area and type.</li>
-                  <li>Move sliders to match finish level.</li>
-                  <li>Use assumptions to reflect market conditions.</li>
-                </ol>
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100">
+                    <BadgeDollarSign className="h-5 w-5 text-emerald-700" />
+                  </div>
+                  <div>
+                    <div className="text-base font-semibold">Budget</div>
+                    <div className="text-sm text-slate-500">Track your project budget</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Set Budget</div>
+                <div className="mt-2 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <BadgeDollarSign className="h-4 w-4 text-slate-500" />
+                  <input
+                    type="number"
+                    value={budget}
+                    onChange={(e) => setBudget(parseInt(e.target.value || "0", 10))}
+                    className="w-full bg-transparent text-base font-semibold text-slate-900 outline-none"
+                    aria-label="Project budget"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <div className="text-sm font-medium text-slate-600">Total Cost</div>
+                  <div className="text-sm font-semibold text-slate-900">{currency(totals.grand)}</div>
+                </div>
+                <div className={`flex items-center justify-between rounded-xl border ${
+                  budget - totals.grand >= 0
+                    ? 'border-emerald-200 bg-emerald-50'
+                    : 'border-red-200 bg-red-50'
+                } px-3 py-2`}>
+                  <div className={`text-sm font-medium ${
+                    budget - totals.grand >= 0 ? 'text-emerald-700' : 'text-red-700'
+                  }`}>
+                    {budget - totals.grand >= 0 ? 'Remaining' : 'Over Budget'}
+                  </div>
+                  <div className={`text-sm font-semibold ${
+                    budget - totals.grand >= 0 ? 'text-emerald-700' : 'text-red-700'
+                  }`}>
+                    {currency(Math.abs(budget - totals.grand))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Budget Status</div>
+                <div className="mt-2">
+                  <div className="relative h-3 overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className={`h-full transition-all duration-300 ${
+                        totals.grand / budget > 1 ? 'bg-red-600' : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${Math.min((totals.grand / budget) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <div className="mt-1 flex justify-between text-xs text-slate-500">
+                    <span>{((totals.grand / budget) * 100).toFixed(0)}% used</span>
+                    <span>{currency(budget)}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100">
-                  <span className="text-base">📊</span>
+                  <SlidersHorizontal className="h-5 w-5 text-slate-700" />
                 </div>
                 <div>
-                  <div className="text-base font-semibold">Cost by room</div>
-                  <div className="text-sm text-slate-500">Highest contributors at the top</div>
+                  <div className="text-base font-semibold">Project assumptions</div>
+                  <div className="text-sm text-slate-500">
+                    Global multipliers applied after room costs
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-4 h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
-                    <Tooltip content={<SmartTooltip />} />
-                    <Bar dataKey="cost" radius={[10, 10, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="text-sm font-semibold">Design note</div>
-                <div className="mt-1 text-sm text-slate-600">
-                  Sliders map to clear, labeled finish tiers. The UI shows both adder per sf and room totals
-                  to help users understand tradeoffs quickly.
+              <div className="mt-4 space-y-3">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold">Design fee</div>
+                      <div className="text-xs text-slate-500">Architecture, MEP engineering, PM</div>
+                    </div>
+                    <div className="text-sm font-semibold">{designFeePct}%</div>
+                  </div>
+                  <div className="mt-3">
+                    <input
+                      type="range"
+                      className="w-full accent-slate-900"
+                      min={0}
+                      max={12}
+                      step={1}
+                      value={designFeePct}
+                      onChange={(e) => setDesignFeePct(parseInt(e.target.value, 10))}
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <SoftDivider label="Tip" icon={<Sparkles className="h-4 w-4" />} />
-              <div className="mt-3 text-sm text-slate-600">
-                For early feasibility, keep most rooms at Refresh or Standard. Upgrade only the spaces that
-                drive experience: lobby, labs, restrooms, and lighting.
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold">Escalation</div>
+                      <div className="text-xs text-slate-500">Market drift, lead-time risk</div>
+                    </div>
+                    <div className="text-sm font-semibold">{escalationPct}%</div>
+                  </div>
+                  <div className="mt-3">
+                    <input
+                      type="range"
+                      className="w-full accent-slate-900"
+                      min={0}
+                      max={10}
+                      step={1}
+                      value={escalationPct}
+                      onChange={(e) => setEscalationPct(parseInt(e.target.value, 10))}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold">GC overhead + profit</div>
+                      <div className="text-xs text-slate-500">General conditions, supervision</div>
+                    </div>
+                    <div className="text-sm font-semibold">{gcOverheadPct}%</div>
+                  </div>
+                  <div className="mt-3">
+                    <input
+                      type="range"
+                      className="w-full accent-slate-900"
+                      min={8}
+                      max={25}
+                      step={1}
+                      value={gcOverheadPct}
+                      onChange={(e) => setGcOverheadPct(parseInt(e.target.value, 10))}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold">Contingency</div>
+                      <div className="text-xs text-slate-500">Unknowns, scope refinement</div>
+                    </div>
+                    <div className="text-sm font-semibold">{contingencyPct}%</div>
+                  </div>
+                  <div className="mt-3">
+                    <input
+                      type="range"
+                      className="w-full accent-slate-900"
+                      min={0}
+                      max={20}
+                      step={1}
+                      value={contingencyPct}
+                      onChange={(e) => setContingencyPct(parseInt(e.target.value, 10))}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
