@@ -1,0 +1,137 @@
+{
+  "demolitionComponents": [
+    {
+      "key": "demoFloor",
+      "name": "Flooring",
+      "helper": "Remove existing flooring",
+      "costs": [0, 1, 2, 3, 4]
+    },
+    {
+      "key": "demoWalls",
+      "name": "Walls",
+      "helper": "Remove/modify walls",
+      "costs": [0, 2, 4, 6, 8]
+    },
+    {
+      "key": "demoCeiling",
+      "name": "Ceiling",
+      "helper": "Remove ceiling materials",
+      "costs": [0, 1.5, 3, 4.5, 6]
+    },
+    {
+      "key": "demoLighting",
+      "name": "Lighting",
+      "helper": "Remove light fixtures",
+      "costs": [0, 0.5, 1, 1.5, 2]
+    },
+    {
+      "key": "demoHVAC",
+      "name": "HVAC",
+      "helper": "Repair/Replace HVAC",
+      "costs": [0, 1, 2, 3, 4]
+    },
+    {
+      "key": "demoCasework",
+      "name": "Casework",
+      "helper": "Remove cabinets/millwork",
+      "costs": [0, 1, 2, 3, 4]
+    }
+  ],
+  "interiorComponents": [
+    {
+      "key": "floors",
+      "name": "Floors",
+      "helper": "LVT, carpet, tile, transitions",
+      "costs": [0, 6, 14, 24],
+      "appliesTo": "all"
+    },
+    {
+      "key": "walls",
+      "name": "Walls",
+      "helper": "Patch, paint, feature, framing",
+      "costs": [0, 4, 10, 18],
+      "appliesTo": "all"
+    },
+    {
+      "key": "ceiling",
+      "name": "Ceiling",
+      "helper": "ACT, drywall, acoustics",
+      "costs": [0, 3, 8, 14],
+      "appliesTo": "all"
+    },
+    {
+      "key": "lighting",
+      "name": "Lighting",
+      "helper": "Fixtures, controls, daylighting",
+      "costs": [0, 4, 9, 16],
+      "appliesTo": "all"
+    },
+    {
+      "key": "hvac",
+      "name": "HVAC",
+      "helper": "Diffusers, VAVs, units, balancing",
+      "costs": [0, 5, 12, 20],
+      "appliesTo": "all"
+    },
+    {
+      "key": "tech",
+      "name": "Tech",
+      "helper": "Data, AV, power, devices",
+      "costs": [0, 3, 8, 14],
+      "appliesTo": ["learningroom", "office", "conferenceroom", "limitlessroom", "rocketroom"]
+    },
+    {
+      "key": "millwork",
+      "name": "Casework",
+      "helper": "Storage, built-ins, counters",
+      "costs": [0, 2, 6, 12],
+      "appliesTo": ["learningroom", "office", "breakroom", "limitlessroom", "rocketroom"]
+    },
+    {
+      "key": "furniture",
+      "name": "Furniture",
+      "helper": "Desks, chairs, tables, fixtures",
+      "costs": [0, 5, 12, 22],
+      "appliesTo": ["learningroom", "office", "conferenceroom", "breakroom", "multipurpose"]
+    },
+    {
+      "key": "appliances",
+      "name": "Appliances",
+      "helper": "Ovens, refrigerators, dishwashers",
+      "costs": [0, 15, 35, 60],
+      "appliesTo": ["breakroom"]
+    },
+    {
+      "key": "labequip",
+      "name": "Lab Equipment",
+      "helper": "Benches, fume hoods, gas lines",
+      "costs": [0, 20, 45, 80],
+      "appliesTo": ["limitlessroom"]
+    }
+  ],
+  "restroomComponent": {
+    "key": "restroomSpec",
+    "name": "Restroom spec",
+    "helper": "Fixtures, tile, partitions, plumbing",
+    "costs": [0, 40, 65, 85, 110],
+    "levels": [
+      { "value": 0, "label": "As-Is" },
+      { "value": 1, "label": "Demo + Basic Rebuild" },
+      { "value": 2, "label": "Demo + Alpha Rebuild" },
+      { "value": 3, "label": "Basic Spec" },
+      { "value": 4, "label": "Alpha Spec" }
+    ]
+  },
+  "exteriorComponent": {
+    "key": "exteriorSpec",
+    "name": "Finish Spec",
+    "helper": "Site work, materials, installation",
+    "costs": [0, 8, 18, 35],
+    "levels": [
+      { "value": 0, "label": "As-Is" },
+      { "value": 1, "label": "Refresh" },
+      { "value": 2, "label": "Upgrade" },
+      { "value": 3, "label": "Alpha Spec" }
+    ]
+  }
+}
