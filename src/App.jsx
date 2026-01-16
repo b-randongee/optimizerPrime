@@ -13,8 +13,15 @@ import {
   Unlock,
   Menu,
   X,
+  Info,
+  Download,
 } from "lucide-react";
 import costsData from "./costs.json";
+import ExportPDFButton from "./components/ExportPDFButton";
+import LeftSidebar from "./components/LeftSidebar";
+import MiddleEditor from "./components/MiddleEditor";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 // Dummy pricing model
 // Levels: 0 = As-Is, 1 = Refresh, 2 = Upgrade, 3 = Alpha
@@ -279,8 +286,9 @@ function SoftDivider({ label, icon }) {
 export default function App() {
   const [rooms, setRooms] = useState(() => [
     defaultRoom({ name: "Learning Room 101", type: "learningroom", sqft: 900, restroomCount: 0 }),
-    defaultRoom({ name: "Office", type: "office", sqft: 260, restroomCount: 0 }),
+    defaultRoom({ name: "Office", type: "office", sqft: 260, restroomCount: 0, locked: true }),
     defaultRoom({ name: "Restroom", type: "restroom", sqft: 160, restroomSpec: 2, levels: Object.fromEntries(COMPONENTS.map((c) => [c.key, 0])) }),
+    defaultRoom({ name: "Playground", type: "playground", sqft: 1200, isExterior: true }),
   ]);
 
   const [contingencyPct, setContingencyPct] = useState(10);
@@ -296,6 +304,9 @@ export default function App() {
   );
   const [demolitionLocked, setDemolitionLocked] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  // Selection state for left sidebar navigation
+  const [selectedItemId, setSelectedItemId] = useState(() => rooms[0]?.id || 'demolition');
 
   // Calculate budget: (students × tuition) - (lease cost × 12 × lease term)
   const budget = useMemo(() => {
@@ -330,6 +341,13 @@ export default function App() {
     const sqft = rooms.reduce((sum, r) => sum + (r.sqft || 0), 0);
     const cpsf = sqft > 0 ? grand / sqft : 0;
 
+    // Calculate individual room costs for left sidebar display
+    const roomCosts = rooms.map(room => {
+      const total = roomCost(room);
+      const perSqft = room.sqft > 0 ? total / room.sqft : 0;
+      return { id: room.id, total, perSqft };
+    });
+
     return {
       direct,
       interiorCost,
@@ -344,7 +362,8 @@ export default function App() {
       sqft,
       interiorSqft,
       exteriorSqft,
-      cpsf
+      cpsf,
+      roomCosts
     };
   }, [rooms, contingencyPct, gcOverheadPct, escalationPct, designFeePct, demolitionLevels]);
 
@@ -362,17 +381,29 @@ export default function App() {
 
   const addRoom = (isExterior = false) => {
     const count = prev => prev.filter(r => r.isExterior === isExterior).length + 1;
-    setRooms((prev) => [...prev, defaultRoom({
-      name: isExterior ? `Space ${count(prev)}` : `Room ${count(prev)}`,
+    const newRoom = defaultRoom({
+      name: isExterior ? `Space ${count(rooms)}` : `Room ${count(rooms)}`,
       isExterior
-    })]);
+    });
+    setRooms((prev) => [...prev, newRoom]);
+    setSelectedItemId(newRoom.id); // Auto-select new room
   };
-  const removeRoom = (id) => setRooms((prev) => prev.filter((r) => r.id !== id));
+  const removeRoom = (id) => {
+    setRooms((prev) => prev.filter((r) => r.id !== id));
+    // If deleting selected room, select another
+    if (selectedItemId === id) {
+      const remainingRooms = rooms.filter(r => r.id !== id);
+      setSelectedItemId(remainingRooms[0]?.id || 'demolition');
+    }
+  };
   const updateRoom = (id, patch) =>
     setRooms((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
+  // Keyboard shortcuts for power users
+  useKeyboardShortcuts(selectedItemId, setSelectedItemId, rooms);
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div id="dashboard-root" className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
       <div className="border-b border-slate-200 bg-emerald-500">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-5">
@@ -393,660 +424,55 @@ export default function App() {
 
       {/* Body */}
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 py-6 lg:grid-cols-12">
-        {/* Main */}
-        <div className="lg:col-span-8">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            {/* Demolition Section */}
-            <div className="flex items-center gap-3 pb-4">
-              <div className="flex-1 border-t border-slate-300"></div>
-              <div className="flex items-center gap-2">
-                <div className="text-sm font-semibold text-orange-600">Demolition — {currency(totals.demolition)}</div>
-                <button
-                  onClick={() => setDemolitionLocked(!demolitionLocked)}
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-lg border border-orange-300 bg-white text-orange-600 hover:bg-orange-50"
-                  aria-label={demolitionLocked ? "Unlock demolition" : "Lock demolition"}
-                  title={demolitionLocked ? "Unlock demolition" : "Lock demolition"}
-                >
-                  {demolitionLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
-                </button>
-              </div>
-              <div className="flex-1 border-t border-slate-300"></div>
-            </div>
-
-            <div className="space-y-4 pb-6">
-              <div className="rounded-3xl border-2 border-orange-500 bg-slate-50 p-4">
-                {demolitionLocked ? (
-                  /* Collapsed locked view */
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setDemolitionLocked(false)}
-                      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
-                      aria-label="Unlock demolition"
-                      title="Unlock"
-                    >
-                      <Lock className="h-5 w-5" />
-                    </button>
-                    <div className="flex-1 flex items-center justify-between">
-                      <div>
-                        <div className="text-sm font-semibold text-slate-900">Demolition</div>
-                        <div className="text-xs text-slate-500">Demolition</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-semibold text-slate-900">{currency(totals.demolition)}</div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  /* Full expanded view */
-                  <>
-                {/* Demolition header */}
-                <div className="flex items-start gap-3">
-                  {/* Left column: Icon, Lock */}
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm">
-                      <span className="text-lg">💥</span>
-                    </div>
-                    <button
-                      onClick={() => setDemolitionLocked(!demolitionLocked)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
-                      aria-label="Lock/Unlock demolition"
-                      title={demolitionLocked ? "Unlock" : "Lock"}
-                    >
-                      {demolitionLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                    </button>
-                  </div>
-
-                  {/* Right column: Components */}
-                  <div className="flex-1">
-                    {/* Demolition Components */}
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                      {DEMOLITION_COMPONENTS.map((comp) => (
-                        <ComponentRow
-                          key={comp.key}
-                          title={comp.name}
-                          helper={comp.helper}
-                          value={demolitionLevels[comp.key]}
-                          onChange={(v) => setDemolitionLevels(prev => ({ ...prev, [comp.key]: v }))}
-                          costPerSqft={comp.costs[demolitionLevels[comp.key]]}
-                          labelOverride={formatLevelLabel({ key: comp.key }, demolitionLevels[comp.key])}
-                          sliderLabels={DEMOLITION_LEVEL_LABELS}
-                          max={4}
-                          disabled={demolitionLocked}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                </>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 pb-4">
-              <div className="flex-1 border-t border-slate-300"></div>
-              <div className="flex items-center gap-2">
-                <div className="text-sm font-semibold text-emerald-600">Interior Spaces — {currency(totals.interiorCost)}</div>
-                <button
-                  onClick={() => {
-                    const interiorRooms = rooms.filter(r => !r.isExterior);
-                    const allLocked = interiorRooms.every(r => r.locked);
-                    setRooms(prev => prev.map(r => r.isExterior ? r : { ...r, locked: !allLocked }));
-                  }}
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-lg border border-emerald-300 bg-white text-emerald-600 hover:bg-emerald-50"
-                  aria-label="Toggle lock all interior spaces"
-                  title="Toggle lock all interior spaces"
-                >
-                  {rooms.filter(r => !r.isExterior).every(r => r.locked) ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
-                </button>
-              </div>
-              <div className="flex-1 border-t border-slate-300"></div>
-            </div>
-
-            <div className="space-y-4">
-              <AnimatePresence initial={false}>
-                {(() => {
-                  const interiorRooms = rooms.filter(r => !r.isExterior);
-                  const exteriorRooms = rooms.filter(r => r.isExterior);
-
-                  return [
-                    ...interiorRooms.map((room) => {
-                      const typeMeta = ROOM_TYPES.find((t) => t.key === room.type) || ROOM_TYPES[0];
-                      const cost = roomCost(room);
-                      const cpsfRoom = room.sqft > 0 ? cost / room.sqft : 0;
-
-                      const isRestroomRoom = room.type === "restroom";
-                      const isExteriorSpace = room.isExterior;
-                      const showEmbeddedRestroom = !isRestroomRoom && !isExteriorSpace && room.restroomCount > 0;
-
-                      return (
-                        <motion.div
-                          key={room.id}
-                        layout
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.18 }}
-                        className={`rounded-3xl border-2 ${isExteriorSpace ? 'border-blue-500' : 'border-emerald-500'} bg-slate-50 p-4`}
-                      >
-                      {room.locked ? (
-                        /* Collapsed locked view */
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => updateRoom(room.id, { locked: false })}
-                            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
-                            aria-label="Unlock room"
-                            title="Unlock"
-                          >
-                            <Lock className="h-5 w-5" />
-                          </button>
-                          <div className="flex-1 flex items-center justify-between">
-                            <div>
-                              <div className="text-sm font-semibold text-slate-900">{room.name}</div>
-                              <div className="text-xs text-slate-500">{typeMeta.label}</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-lg font-semibold text-slate-900">{currency(cost)}</div>
-                              <div className="text-xs text-slate-500">{currency(cpsfRoom)} / sqft</div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        /* Full expanded view */
-                        <>
-                      {/* Room header */}
-                      <div className="flex items-start gap-3">
-                        {/* Left column: Icon, Trash, Lock */}
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm">
-                            <span className="text-lg">{typeMeta.icon}</span>
-                          </div>
-                          <button
-                            onClick={() => {
-                              if (window.confirm("Really Delete?")) {
-                                removeRoom(room.id);
-                              }
-                            }}
-                            disabled={room.locked}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                            aria-label="Remove room"
-                            title="Remove"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => updateRoom(room.id, { locked: !room.locked })}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
-                            aria-label="Lock/Unlock room"
-                            title={room.locked ? "Unlock" : "Lock"}
-                          >
-                            {room.locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                          </button>
-                        </div>
-
-                        {/* Right column: All inputs */}
-                        <div className="flex-1">
-                          <div className="flex flex-col gap-2">
-                            <div className="flex gap-2">
-                              <input
-                                value={room.name}
-                                onChange={(e) => updateRoom(room.id, { name: e.target.value })}
-                                disabled={room.locked}
-                                className="flex-1 min-w-[120px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                aria-label="Room name"
-                              />
-
-                              <select
-                                value={room.type}
-                                onChange={(e) => {
-                                  const newType = e.target.value;
-                                  const newTypeMeta = ROOM_TYPES.find((t) => t.key === newType);
-                                  updateRoom(room.id, {
-                                    type: newType,
-                                    isExterior: newTypeMeta?.isExterior || false,
-                                    levels:
-                                      newType === "restroom"
-                                        ? Object.fromEntries(COMPONENTS.map((c) => [c.key, 0]))
-                                        : room.levels,
-                                  });
-                                }}
-                                disabled={room.locked}
-                                className="flex-1 min-w-[140px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                aria-label="Room type"
-                              >
-                                {ROOM_TYPES.filter(t => t.isExterior === room.isExterior).map((t) => (
-                                  <option key={t.key} value={t.key}>
-                                    {t.label}
-                                  </option>
-                                ))}
-                              </select>
-
-                              <div className="flex items-center gap-2 min-w-[100px] rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                                <Ruler className="h-4 w-4 text-slate-500" />
-                                <input
-                                  type="number"
-                                  value={room.sqft}
-                                  onChange={(e) => {
-                                    const val = parseInt(e.target.value || "0", 10);
-                                    updateRoom(room.id, { sqft: clamp(isNaN(val) ? 0 : val, 0, 250000) });
-                                  }}
-                                  disabled={room.locked}
-                                  className="w-16 bg-transparent text-sm font-semibold text-slate-900 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                                  aria-label="Square feet"
-                                />
-                                <div className="text-xs font-semibold text-slate-500">sf</div>
-                              </div>
-
-                              {!isRestroomRoom && !isExteriorSpace && (
-                                <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                                  <span className="text-lg">🚻</span>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    max="2"
-                                    value={room.restroomCount}
-                                    onChange={(e) => {
-                                      const val = parseInt(e.target.value || "0", 10);
-                                      updateRoom(room.id, { restroomCount: clamp(isNaN(val) ? 0 : val, 0, 2) });
-                                    }}
-                                    disabled={room.locked}
-                                    className="w-12 bg-transparent text-sm font-semibold text-slate-900 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                                    aria-label="Number of restrooms"
-                                  />
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-                              <MiniKey label="Room cost" value={currency(cost)} />
-                              <MiniKey label="Cost per sf" value={room.sqft ? `${currency(cpsfRoom)}/sf` : "-"} />
-                              <MiniKey label="Allowance" value={currency(450 + 0.35 * room.sqft)} />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Sliders */}
-                      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                        {isExteriorSpace ? (
-                          <div className="col-span-1 md:col-span-2">
-                            <ComponentRow
-                              title={EXTERIOR_COMPONENT.name}
-                              helper={EXTERIOR_COMPONENT.helper}
-                              value={room.exteriorSpec}
-                              onChange={(v) => updateRoom(room.id, { exteriorSpec: v })}
-                              costPerSqft={EXTERIOR_COMPONENT.costs[clamp(room.exteriorSpec, 0, 3)]}
-                              labelOverride={formatLevelLabel({ key: "exteriorSpec" }, room.exteriorSpec)}
-                              disabled={room.locked}
-                            />
-                          </div>
-                        ) : isRestroomRoom ? (
-                          <div className="col-span-1 md:col-span-2">
-                            <ComponentRow
-                              title={RESTROOM_COMPONENT.name}
-                              helper={RESTROOM_COMPONENT.helper}
-                              value={room.restroomSpec}
-                              onChange={(v) => updateRoom(room.id, { restroomSpec: v })}
-                              costPerSqft={RESTROOM_COMPONENT.costs[clamp(room.restroomSpec, 0, 4)]}
-                              labelOverride={formatLevelLabel({ key: "restroomSpec" }, room.restroomSpec)}
-                              max={4}
-                              disabled={room.locked}
-                            />
-                          </div>
-                        ) : (
-                          getApplicableComponents(room.type).map((c) => (
-                            <ComponentRow
-                              key={c.key}
-                              title={c.name}
-                              helper={c.helper}
-                              value={room.levels?.[c.key] ?? 0}
-                              onChange={(v) =>
-                                updateRoom(room.id, {
-                                  levels: { ...room.levels, [c.key]: v },
-                                })
-                              }
-                              costPerSqft={c.costs[clamp(room.levels?.[c.key] ?? 0, 0, 3)]}
-                              disabled={room.locked}
-                            />
-                          ))
-                        )}
-
-                        {showEmbeddedRestroom && Array.from({ length: room.restroomCount }).map((_, idx) => (
-                          <div key={`restroom-${idx}`} className="col-span-1 md:col-span-2">
-                            <div className="rounded-2xl border-2 border-slate-200 bg-white p-4">
-                              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                <div>
-                                  <div className="text-sm font-semibold text-slate-900">
-                                    Attached restroom {room.restroomCount > 1 ? `#${idx + 1}` : ''}
-                                  </div>
-                                  <div className="text-xs text-slate-500">
-                                    Applies restroom spec pricing to the restroom area only
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                                  <div className="text-xs font-semibold text-slate-500">Restroom area</div>
-                                  <input
-                                    type="number"
-                                    value={room.restroomArea}
-                                    onChange={(e) =>
-                                      updateRoom(room.id, {
-                                        restroomArea: clamp(parseInt(e.target.value || "0", 10), 20, 250),
-                                      })
-                                    }
-                                    disabled={room.locked}
-                                    className="w-20 bg-transparent text-sm font-semibold text-slate-900 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                                    aria-label="Restroom area"
-                                  />
-                                  <div className="text-xs font-semibold text-slate-500">sf</div>
-                                </div>
-                              </div>
-
-                              <div className="mt-3">
-                                <div className="flex items-center justify-between gap-3">
-                                  <div className="flex items-center gap-2">
-                                    <SegPill
-                                      text={formatLevelLabel({ key: "restroomSpec" }, room.restroomSpec)}
-                                      tone={levelMeta(room.restroomSpec).tone}
-                                    />
-                                    <div className="text-xs text-slate-500">{RESTROOM_COMPONENT.helper}</div>
-                                  </div>
-                                  <div className="text-sm font-semibold text-slate-900">
-                                    {currency(RESTROOM_COMPONENT.costs[clamp(room.restroomSpec, 0, 4)])}/sf
-                                  </div>
-                                </div>
-                                <div className="mt-2">
-                                  <Range value={room.restroomSpec} onChange={(v) => updateRoom(room.id, { restroomSpec: v })} max={4} disabled={room.locked} />
-                                  <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500">
-                                    <span>As-Is</span>
-                                    <span>Demo+Basic</span>
-                                    <span>Demo+Alpha</span>
-                                    <span>Basic</span>
-                                    <span>Alpha</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      </>
-                      )}
-                    </motion.div>
-                      );
-                    }),
-
-                    // Add Interior Space button
-                    <div key="add-interior" className="rounded-3xl border-2 border-slate-300 bg-white p-8 flex items-center justify-center">
-                      <button
-                        onClick={() => addRoom(false)}
-                        className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-emerald-500 bg-white px-4 py-2 text-sm font-semibold text-emerald-500 shadow-sm hover:bg-emerald-50"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Interior Space
-                      </button>
-                    </div>,
-
-                    // Exterior Spaces divider (always show)
-                    <div key="exterior-divider" className="flex items-center gap-3 py-2">
-                      <div className="flex-1 border-t border-slate-300"></div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm font-semibold text-blue-600">Exterior Spaces — {currency(totals.exteriorCost)}</div>
-                        <button
-                          onClick={() => {
-                            const exteriorRooms = rooms.filter(r => r.isExterior);
-                            const allLocked = exteriorRooms.every(r => r.locked);
-                            setRooms(prev => prev.map(r => !r.isExterior ? r : { ...r, locked: !allLocked }));
-                          }}
-                          className="inline-flex h-6 w-6 items-center justify-center rounded-lg border border-blue-300 bg-white text-blue-600 hover:bg-blue-50"
-                          aria-label="Toggle lock all exterior spaces"
-                          title="Toggle lock all exterior spaces"
-                        >
-                          {rooms.filter(r => r.isExterior).every(r => r.locked) ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
-                        </button>
-                      </div>
-                      <div className="flex-1 border-t border-slate-300"></div>
-                    </div>,
-
-                    // Exterior rooms
-                    ...exteriorRooms.map((room) => {
-                      const typeMeta = ROOM_TYPES.find((t) => t.key === room.type) || ROOM_TYPES[0];
-                      const cost = roomCost(room);
-                      const cpsfRoom = room.sqft > 0 ? cost / room.sqft : 0;
-
-                      const isRestroomRoom = room.type === "restroom";
-                      const isExteriorSpace = room.isExterior;
-                      const showEmbeddedRestroom = !isRestroomRoom && !isExteriorSpace && room.restroomCount > 0;
-
-                      return (
-                        <motion.div
-                          key={room.id}
-                          layout
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          transition={{ duration: 0.18 }}
-                          className={`rounded-3xl border-2 ${isExteriorSpace ? 'border-blue-500' : 'border-emerald-500'} bg-slate-50 p-4`}
-                        >
-                          {room.locked ? (
-                            /* Collapsed locked view */
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => updateRoom(room.id, { locked: false })}
-                                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
-                                aria-label="Unlock room"
-                                title="Unlock"
-                              >
-                                <Lock className="h-5 w-5" />
-                              </button>
-                              <div className="flex-1 flex items-center justify-between">
-                                <div>
-                                  <div className="text-sm font-semibold text-slate-900">{room.name}</div>
-                                  <div className="text-xs text-slate-500">{typeMeta.label}</div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-lg font-semibold text-slate-900">{currency(cost)}</div>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            /* Full expanded view */
-                            <>
-                          {/* Room header */}
-                          <div className="flex items-start gap-3">
-                            {/* Left column: Icon, Trash, Lock */}
-                            <div className="flex flex-col items-center gap-2">
-                              <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm">
-                                <span className="text-lg">{typeMeta.icon}</span>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  if (window.confirm("Really Delete?")) {
-                                    removeRoom(room.id);
-                                  }
-                                }}
-                                disabled={room.locked}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                aria-label="Remove room"
-                                title="Remove"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => updateRoom(room.id, { locked: !room.locked })}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
-                                aria-label="Lock/Unlock room"
-                                title={room.locked ? "Unlock" : "Lock"}
-                              >
-                                {room.locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                              </button>
-                            </div>
-
-                            {/* Right column: All inputs */}
-                            <div className="flex-1">
-                              <div className="flex gap-2">
-                                <input
-                                  value={room.name}
-                                  onChange={(e) => updateRoom(room.id, { name: e.target.value })}
-                                  disabled={room.locked}
-                                  className="flex-1 min-w-[120px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:ring-2 focus:ring-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                  aria-label="Room name"
-                                />
-
-                                <select
-                                  value={room.type}
-                                  onChange={(e) => {
-                                    const newType = e.target.value;
-                                    const newTypeMeta = ROOM_TYPES.find((t) => t.key === newType);
-                                    updateRoom(room.id, {
-                                      type: newType,
-                                      isExterior: newTypeMeta?.isExterior || false,
-                                      levels:
-                                        newType === "restroom"
-                                          ? Object.fromEntries(COMPONENTS.map((c) => [c.key, 0]))
-                                          : room.levels,
-                                    });
-                                  }}
-                                  disabled={room.locked}
-                                  className="flex-1 min-w-[140px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                  aria-label="Room type"
-                                >
-                                  {ROOM_TYPES.filter(t => t.isExterior === room.isExterior).map((t) => (
-                                    <option key={t.key} value={t.key}>
-                                      {t.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                            {isExteriorSpace ? (
-                              <div className="col-span-1 md:col-span-2">
-                                <ComponentRow
-                                  title={EXTERIOR_COMPONENT.name}
-                                  helper={EXTERIOR_COMPONENT.helper}
-                                  value={room.exteriorSpec}
-                                  onChange={(v) => updateRoom(room.id, { exteriorSpec: v })}
-                                  costPerSqft={EXTERIOR_COMPONENT.costs[clamp(room.exteriorSpec, 0, 3)]}
-                                  labelOverride={formatLevelLabel({ key: "exteriorSpec" }, room.exteriorSpec)}
-                                  disabled={room.locked}
-                                />
-                              </div>
-                            ) : isRestroomRoom ? (
-                              <div className="col-span-1 md:col-span-2">
-                                <ComponentRow
-                                  title={RESTROOM_COMPONENT.name}
-                                  helper={RESTROOM_COMPONENT.helper}
-                                  value={room.restroomSpec}
-                                  onChange={(v) => updateRoom(room.id, { restroomSpec: v })}
-                                  costPerSqft={RESTROOM_COMPONENT.costs[clamp(room.restroomSpec, 0, 4)]}
-                                  labelOverride={formatLevelLabel({ key: "restroomSpec" }, room.restroomSpec)}
-                                  max={4}
-                                  disabled={room.locked}
-                                />
-                              </div>
-                            ) : (
-                              getApplicableComponents(room.type).map((c) => (
-                                <ComponentRow
-                                  key={c.key}
-                                  title={c.name}
-                                  helper={c.helper}
-                                  value={room.levels?.[c.key] ?? 0}
-                                  onChange={(v) =>
-                                    updateRoom(room.id, {
-                                      levels: { ...room.levels, [c.key]: v },
-                                    })
-                                  }
-                                  costPerSqft={c.costs[clamp(room.levels?.[c.key] ?? 0, 0, 3)]}
-                                  disabled={room.locked}
-                                />
-                              ))
-                            )}
-
-                            {showEmbeddedRestroom && Array.from({ length: room.restroomCount }).map((_, idx) => (
-                              <div key={`restroom-${idx}`} className="col-span-1 md:col-span-2">
-                                <div className="rounded-2xl border-2 border-slate-200 bg-white p-4">
-                                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                    <div>
-                                      <div className="text-sm font-semibold text-slate-900">
-                                        Attached restroom {room.restroomCount > 1 ? `#${idx + 1}` : ''}
-                                      </div>
-                                      <div className="text-xs text-slate-500">
-                                        Applies restroom spec pricing to the restroom area only
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                                      <div className="text-xs font-semibold text-slate-500">Restroom area</div>
-                                      <input
-                                        type="number"
-                                        value={room.restroomArea}
-                                        onChange={(e) =>
-                                          updateRoom(room.id, {
-                                            restroomArea: clamp(parseInt(e.target.value || "0", 10), 20, 250),
-                                          })
-                                        }
-                                        disabled={room.locked}
-                                        className="w-20 bg-transparent text-sm font-semibold text-slate-900 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                                        aria-label="Restroom area"
-                                      />
-                                      <div className="text-xs font-semibold text-slate-500">sf</div>
-                                    </div>
-                                  </div>
-
-                                  <div className="mt-3">
-                                    <div className="flex items-center justify-between gap-3">
-                                      <div className="flex items-center gap-2">
-                                        <SegPill
-                                          text={formatLevelLabel({ key: "restroomSpec" }, room.restroomSpec)}
-                                          tone={levelMeta(room.restroomSpec).tone}
-                                        />
-                                        <div className="text-xs text-slate-500">{RESTROOM_COMPONENT.helper}</div>
-                                      </div>
-                                      <div className="text-sm font-semibold text-slate-900">
-                                        {currency(RESTROOM_COMPONENT.costs[clamp(room.restroomSpec, 0, 4)])}/sf
-                                      </div>
-                                    </div>
-                                    <div className="mt-2">
-                                      <Range value={room.restroomSpec} onChange={(v) => updateRoom(room.id, { restroomSpec: v })} max={4} disabled={room.locked} />
-                                      <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500">
-                                        <span>As-Is</span>
-                                        <span>Demo+Basic</span>
-                                        <span>Demo+Alpha</span>
-                                        <span>Basic</span>
-                                        <span>Alpha</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          </>
-                          )}
-                        </motion.div>
-                      );
-                    }),
-
-                    // Add Exterior Space button (always show)
-                    <div key="add-exterior" className="rounded-3xl border-2 border-slate-300 bg-white p-8 flex items-center justify-center">
-                      <button
-                        onClick={() => addRoom(true)}
-                        className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-blue-500 bg-white px-4 py-2 text-sm font-semibold text-blue-500 shadow-sm hover:bg-blue-50"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Exterior Space
-                      </button>
-                    </div>
-                  ];
-                })()}
-              </AnimatePresence>
-            </div>
+        {/* Left Sidebar - Location List (hidden on mobile) */}
+        <div className="hidden lg:block lg:col-span-3">
+          <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
+            <LeftSidebar
+              selectedItemId={selectedItemId}
+              setSelectedItemId={setSelectedItemId}
+              demolitionLocked={demolitionLocked}
+              setDemolitionLocked={setDemolitionLocked}
+              demolitionCost={totals.demolition}
+              rooms={rooms}
+              updateRoom={updateRoom}
+              addRoom={addRoom}
+              totals={totals}
+            />
           </div>
+        </div>
+
+        {/* Middle - Dynamic Editor */}
+        <div className="lg:col-span-5">
+          <ErrorBoundary
+            fallbackMessage="Unable to display the selected room editor. Try selecting a different room or reloading the page."
+            showReloadButton={true}
+            onReset={() => setSelectedItemId('demolition')}
+          >
+            <MiddleEditor
+              selectedItemId={selectedItemId}
+              setSelectedItemId={setSelectedItemId}
+              rooms={rooms}
+              updateRoom={updateRoom}
+              removeRoom={removeRoom}
+              demolitionLevels={demolitionLevels}
+              setDemolitionLevels={setDemolitionLevels}
+              demolitionLocked={demolitionLocked}
+              totals={totals}
+            />
+          </ErrorBoundary>
         </div>
 
         {/* Sidebar */}
         <div className="lg:col-span-4">
           <div className="sticky top-6 space-y-6">
+            {/* Export to PDF Card */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm" data-html2canvas-ignore>
+              <ExportPDFButton
+                targetElementId="dashboard-root"
+                filename="optimizer-prime-dashboard.pdf"
+              />
+            </div>
+
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">

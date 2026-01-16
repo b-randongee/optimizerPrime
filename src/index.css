@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* PDF Export Styles */
+/* Hide elements from PDF output that have data-html2canvas-ignore attribute */
+[data-html2canvas-ignore] {
+  /* html2canvas automatically skips elements with this attribute */
+}

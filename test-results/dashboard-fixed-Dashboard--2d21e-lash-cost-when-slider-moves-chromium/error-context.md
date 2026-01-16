@@ -1,0 +1,389 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e6]:
+    - img [ref=e8]
+    - generic [ref=e12]:
+      - generic [ref=e13]: Optimizer Prime Dashboard
+      - generic [ref=e14]: Room-by-room budget-informed designer — Inputs update totals instantly. Built for quick scenario planning.
+  - generic [ref=e15]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: DEMOLITION
+        - button "Demolition, Demolition" [ref=e21] [cursor=pointer]:
+          - generic [ref=e22]:
+            - generic [ref=e23]:
+              - generic [ref=e24]:
+                - generic [ref=e25]: 🔨
+                - generic [ref=e26]: Demolition
+              - generic [ref=e27]: Demolition · 2,520 sf
+              - generic [ref=e28]:
+                - generic [ref=e29]: $0
+                - generic [ref=e30]: $0/sf
+            - button "Lock" [ref=e31]:
+              - img [ref=e32]
+      - generic [ref=e35]:
+        - generic [ref=e36]: INTERIOR SPACES
+        - button "Learning Room 101, Learning Room, currently selected" [ref=e37] [cursor=pointer]:
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - generic [ref=e40]:
+                - generic [ref=e41]: 📚
+                - generic [ref=e42]: Learning Room 101
+              - generic [ref=e43]: Learning Room · 900 sf
+              - generic [ref=e44]:
+                - generic [ref=e45]: $68,265
+                - generic [ref=e46]: $76/sf
+            - button "Lock" [ref=e47]:
+              - img [ref=e48]
+        - button "Office, Office" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]:
+            - generic [ref=e53]:
+              - generic [ref=e54]:
+                - generic [ref=e55]: 🧑‍💻
+                - generic [ref=e56]: Office
+              - generic [ref=e57]: Office · 260 sf
+              - generic [ref=e58]:
+                - generic [ref=e59]: $17,961
+                - generic [ref=e60]: $69/sf
+            - button "Unlock" [ref=e61]:
+              - img [ref=e62]
+        - button "Restroom, Restroom" [ref=e65] [cursor=pointer]:
+          - generic [ref=e66]:
+            - generic [ref=e67]:
+              - generic [ref=e68]:
+                - generic [ref=e69]: 🚻
+                - generic [ref=e70]: Restroom
+              - generic [ref=e71]: Restroom · 160 sf
+              - generic [ref=e72]:
+                - generic [ref=e73]: $10,906
+                - generic [ref=e74]: $68/sf
+            - button "Lock" [ref=e75]:
+              - img [ref=e76]
+        - button "+ Add Interior Space" [ref=e79] [cursor=pointer]
+      - generic [ref=e80]:
+        - generic [ref=e81]: EXTERIOR SPACES
+        - button "Playground, Playground" [ref=e82] [cursor=pointer]:
+          - generic [ref=e83]:
+            - generic [ref=e84]:
+              - generic [ref=e85]:
+                - generic [ref=e86]: 🛝
+                - generic [ref=e87]: Playground
+              - generic [ref=e88]: Playground · 1,200 sf
+              - generic [ref=e89]:
+                - generic [ref=e90]: $450
+                - generic [ref=e91]: $0/sf
+            - button "Lock" [ref=e92]:
+              - img [ref=e93]
+        - button "+ Add Exterior Space" [ref=e96] [cursor=pointer]
+    - generic [ref=e98]:
+      - generic [ref=e100]:
+        - img [ref=e101]
+        - generic [ref=e103]:
+          - generic [ref=e104]: How to use this dashboard
+          - generic [ref=e105]:
+            - paragraph [ref=e106]: • Select spaces to customize below, then choose quality levels for each component
+            - paragraph [ref=e107]: • Lock section to collapse it and freeze costs while exploring other options
+            - paragraph [ref=e108]: • Adjust global assumptions in the sidebar to see real-time cost updates
+            - paragraph [ref=e109]: • Export your final configuration to PDF using the button in the sidebar
+          - generic [ref=e110]:
+            - generic [ref=e111]: Keyboard Shortcuts
+            - generic [ref=e112]:
+              - paragraph [ref=e113]: • ↑ or k - Previous room
+              - paragraph [ref=e114]: • ↓ or j - Next room
+              - paragraph [ref=e115]: • Esc - Return to demolition
+              - paragraph [ref=e116]: • Cmd/Ctrl+S - Export PDF
+      - generic [ref=e118]:
+        - generic [ref=e119]:
+          - generic [ref=e120]:
+            - generic [ref=e122]: 📚
+            - button "Remove room" [ref=e123] [cursor=pointer]:
+              - img [ref=e124]
+          - generic [ref=e128]:
+            - generic [ref=e129]:
+              - textbox "Room name" [ref=e130]: Learning Room 101
+              - combobox "Room type" [ref=e131]:
+                - option "Break Room"
+                - option "Conference Room"
+                - option "Hallway"
+                - option "Learning Room" [selected]
+                - option "Limitless Room"
+                - option "Lobby"
+                - option "Multi-Purpose Room"
+                - option "Office"
+                - option "Other Room"
+                - option "Restroom"
+                - option "Rocket Room"
+              - generic [ref=e132]:
+                - img [ref=e133]
+                - spinbutton "Square feet" [ref=e139]: "900"
+                - generic [ref=e140]: sf
+              - generic [ref=e141]:
+                - generic [ref=e142]: 🚻
+                - spinbutton "Number of restrooms" [ref=e143]: "0"
+            - generic [ref=e144]:
+              - generic [ref=e145]:
+                - generic [ref=e146]: Room cost
+                - generic [ref=e147]: $68,265
+              - generic [ref=e148]:
+                - generic [ref=e149]: Cost per sf
+                - generic [ref=e150]: $76/sf
+              - generic [ref=e151]:
+                - generic [ref=e152]: Allowance
+                - generic [ref=e153]: $765
+        - generic [ref=e154]:
+          - generic [ref=e155]:
+            - generic [ref=e156]:
+              - generic [ref=e157]:
+                - generic [ref=e158]:
+                  - generic [ref=e159]: Floors
+                  - generic [ref=e160]: Upgrade
+                - generic [ref=e161]: LVT, carpet, tile, transitions
+              - generic [ref=e162]:
+                - generic [ref=e163]: Adder
+                - generic [ref=e164]: $14/sf
+            - generic [ref=e165]:
+              - slider [active] [ref=e166]: "2"
+              - generic [ref=e167]:
+                - generic [ref=e168]: "0"
+                - generic [ref=e169]: "1"
+                - generic [ref=e170]: "2"
+                - generic [ref=e171]: "3"
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - generic [ref=e174]:
+                - generic [ref=e175]:
+                  - generic [ref=e176]: Walls
+                  - generic [ref=e177]: Refresh
+                - generic [ref=e178]: Patch, paint, feature, framing
+              - generic [ref=e179]:
+                - generic [ref=e180]: Adder
+                - generic [ref=e181]: $4/sf
+            - generic [ref=e182]:
+              - slider [ref=e183]: "1"
+              - generic [ref=e184]:
+                - generic [ref=e185]: "0"
+                - generic [ref=e186]: "1"
+                - generic [ref=e187]: "2"
+                - generic [ref=e188]: "3"
+          - generic [ref=e189]:
+            - generic [ref=e190]:
+              - generic [ref=e191]:
+                - generic [ref=e192]:
+                  - generic [ref=e193]: Ceiling
+                  - generic [ref=e194]: Refresh
+                - generic [ref=e195]: ACT, drywall, acoustics
+              - generic [ref=e196]:
+                - generic [ref=e197]: Adder
+                - generic [ref=e198]: $3/sf
+            - generic [ref=e199]:
+              - slider [ref=e200]: "1"
+              - generic [ref=e201]:
+                - generic [ref=e202]: "0"
+                - generic [ref=e203]: "1"
+                - generic [ref=e204]: "2"
+                - generic [ref=e205]: "3"
+          - generic [ref=e206]:
+            - generic [ref=e207]:
+              - generic [ref=e208]:
+                - generic [ref=e209]:
+                  - generic [ref=e210]: Lighting
+                  - generic [ref=e211]: Refresh
+                - generic [ref=e212]: Fixtures, controls, daylighting
+              - generic [ref=e213]:
+                - generic [ref=e214]: Adder
+                - generic [ref=e215]: $4/sf
+            - generic [ref=e216]:
+              - slider [ref=e217]: "1"
+              - generic [ref=e218]:
+                - generic [ref=e219]: "0"
+                - generic [ref=e220]: "1"
+                - generic [ref=e221]: "2"
+                - generic [ref=e222]: "3"
+          - generic [ref=e223]:
+            - generic [ref=e224]:
+              - generic [ref=e225]:
+                - generic [ref=e226]:
+                  - generic [ref=e227]: HVAC
+                  - generic [ref=e228]: Refresh
+                - generic [ref=e229]: Diffusers, VAVs, units, balancing
+              - generic [ref=e230]:
+                - generic [ref=e231]: Adder
+                - generic [ref=e232]: $5/sf
+            - generic [ref=e233]:
+              - slider [ref=e234]: "1"
+              - generic [ref=e235]:
+                - generic [ref=e236]: "0"
+                - generic [ref=e237]: "1"
+                - generic [ref=e238]: "2"
+                - generic [ref=e239]: "3"
+          - generic [ref=e240]:
+            - generic [ref=e241]:
+              - generic [ref=e242]:
+                - generic [ref=e243]:
+                  - generic [ref=e244]: Tech
+                  - generic [ref=e245]: Refresh
+                - generic [ref=e246]: Data, AV, power, devices
+              - generic [ref=e247]:
+                - generic [ref=e248]: Adder
+                - generic [ref=e249]: $3/sf
+            - generic [ref=e250]:
+              - slider [ref=e251]: "1"
+              - generic [ref=e252]:
+                - generic [ref=e253]: "0"
+                - generic [ref=e254]: "1"
+                - generic [ref=e255]: "2"
+                - generic [ref=e256]: "3"
+          - generic [ref=e257]:
+            - generic [ref=e258]:
+              - generic [ref=e259]:
+                - generic [ref=e260]:
+                  - generic [ref=e261]: Casework
+                  - generic [ref=e262]: Refresh
+                - generic [ref=e263]: Storage, built-ins, counters
+              - generic [ref=e264]:
+                - generic [ref=e265]: Adder
+                - generic [ref=e266]: $2/sf
+            - generic [ref=e267]:
+              - slider [ref=e268]: "1"
+              - generic [ref=e269]:
+                - generic [ref=e270]: "0"
+                - generic [ref=e271]: "1"
+                - generic [ref=e272]: "2"
+                - generic [ref=e273]: "3"
+          - generic [ref=e274]:
+            - generic [ref=e275]:
+              - generic [ref=e276]:
+                - generic [ref=e277]:
+                  - generic [ref=e278]: Furniture
+                  - generic [ref=e279]: Refresh
+                - generic [ref=e280]: Desks, chairs, tables, fixtures
+              - generic [ref=e281]:
+                - generic [ref=e282]: Adder
+                - generic [ref=e283]: $5/sf
+            - generic [ref=e284]:
+              - slider [ref=e285]: "1"
+              - generic [ref=e286]:
+                - generic [ref=e287]: "0"
+                - generic [ref=e288]: "1"
+                - generic [ref=e289]: "2"
+                - generic [ref=e290]: "3"
+    - generic [ref=e292]:
+      - button "Export dashboard to PDF" [ref=e295] [cursor=pointer]:
+        - img [ref=e296]
+        - text: Export to PDF
+      - generic [ref=e299]:
+        - generic [ref=e301]:
+          - img [ref=e303]
+          - generic [ref=e306]:
+            - generic [ref=e307]: Total project cost
+            - generic [ref=e308]: Includes global assumptions
+        - generic [ref=e309]:
+          - generic [ref=e310]: Grand total
+          - generic [ref=e311]: $133,601
+          - generic [ref=e312]:
+            - generic [ref=e313]: 2,520 sf
+            - generic [ref=e314]: $53/sf
+        - generic [ref=e315]:
+          - generic [ref=e316]:
+            - generic [ref=e317]: Left to Spend
+            - generic [ref=e318]: $876,399
+          - generic [ref=e321]:
+            - generic [ref=e322]: $0
+            - generic [ref=e323]: $1,010,000
+        - generic [ref=e324]:
+          - generic [ref=e325]: Budget
+          - generic [ref=e327]: $1,010,000
+        - generic [ref=e329]:
+          - generic [ref=e330]:
+            - generic [ref=e331]: Target Students
+            - generic [ref=e332]:
+              - button "Decrease students" [ref=e333] [cursor=pointer]:
+                - generic [ref=e334]: −
+              - textbox "Target Students" [ref=e335]:
+                - /placeholder: "0"
+                - text: "25"
+              - button "Increase students" [ref=e336] [cursor=pointer]:
+                - generic [ref=e337]: +
+          - generic [ref=e338]:
+            - generic [ref=e339]: Tuition
+            - generic [ref=e340]:
+              - button "Decrease tuition" [ref=e341] [cursor=pointer]:
+                - generic [ref=e342]: −
+              - generic [ref=e343]:
+                - textbox "Tuition" [ref=e344]:
+                  - /placeholder: "0"
+                  - text: 50,000
+                - generic: /mo
+              - button "Increase tuition" [ref=e345] [cursor=pointer]:
+                - generic [ref=e346]: +
+          - generic [ref=e347]:
+            - generic [ref=e348]: Lease Cost
+            - generic [ref=e349]:
+              - button "Decrease lease cost" [ref=e350] [cursor=pointer]:
+                - generic [ref=e351]: −
+              - generic [ref=e352]:
+                - textbox "Lease Cost" [ref=e353]:
+                  - /placeholder: "0"
+                  - text: 10,000
+                - generic: /mo
+              - button "Increase lease cost" [ref=e354] [cursor=pointer]:
+                - generic [ref=e355]: +
+          - generic [ref=e356]:
+            - generic [ref=e357]: Lease Term
+            - generic [ref=e358]:
+              - button "Decrease lease term" [ref=e359] [cursor=pointer]:
+                - generic [ref=e360]: −
+              - generic [ref=e361]:
+                - textbox "Lease Term" [ref=e362]:
+                  - /placeholder: "1"
+                  - text: "2"
+                - generic: yrs
+              - button "Increase lease term" [ref=e363] [cursor=pointer]:
+                - generic [ref=e364]: +
+      - generic [ref=e365]:
+        - generic [ref=e366]:
+          - img [ref=e368]
+          - generic [ref=e369]:
+            - generic [ref=e370]: Project assumptions
+            - generic [ref=e371]: Global multipliers applied after room costs
+        - generic [ref=e372]:
+          - generic [ref=e373]:
+            - generic [ref=e374]:
+              - generic [ref=e375]:
+                - generic [ref=e376]: Design fee
+                - generic [ref=e377]: Architecture, MEP engineering, PM
+              - generic [ref=e378]:
+                - generic [ref=e379]: 6%
+                - generic [ref=e380]: $5,855
+            - slider [ref=e382]: "6"
+          - generic [ref=e383]:
+            - generic [ref=e384]:
+              - generic [ref=e385]:
+                - generic [ref=e386]: Escalation
+                - generic [ref=e387]: Market drift, lead-time risk
+              - generic [ref=e388]:
+                - generic [ref=e389]: 3%
+                - generic [ref=e390]: $3,103
+            - slider [ref=e392]: "3"
+          - generic [ref=e393]:
+            - generic [ref=e394]:
+              - generic [ref=e395]:
+                - generic [ref=e396]: GC overhead + profit
+                - generic [ref=e397]: General conditions, supervision
+              - generic [ref=e398]:
+                - generic [ref=e399]: 14%
+                - generic [ref=e400]: $14,916
+            - slider [ref=e402]: "14"
+          - generic [ref=e403]:
+            - generic [ref=e404]:
+              - generic [ref=e405]:
+                - generic [ref=e406]: Contingency
+                - generic [ref=e407]: Unknowns, scope refinement
+              - generic [ref=e408]:
+                - generic [ref=e409]: 10%
+                - generic [ref=e410]: $12,146
+            - slider [ref=e412]: "10"
+  - generic [ref=e415]: Optimizer Prime Dashboard Built By Brandon Gee
+```

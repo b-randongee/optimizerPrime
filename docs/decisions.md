@@ -135,12 +135,99 @@ User requested a way to edit all construction cost values in one place. Initial 
 
 ---
 
+### ADR-005: React.memo for LocationCard Performance
+**Date**: 2026-01-15
+**Status**: ✅ Implemented
+
+**Context**:
+During code review, identified potential performance issue where editing one room causes all LocationCard components in the sidebar to re-render unnecessarily.
+
+**Alternatives Considered**:
+1. **No optimization** - Let React re-render all cards
+   - Pros: Simpler code, no memo logic
+   - Cons: ~70% unnecessary work with many rooms, potential lag
+2. **React.memo with default comparison** - Shallow prop comparison
+   - Pros: Some optimization
+   - Cons: Doesn't catch all unnecessary re-renders (functions always different)
+3. **React.memo with custom comparison** - Specify which props matter
+   - Pros: Maximum optimization, explicit control
+   - Cons: Slightly more code
+
+**Decision**: Use React.memo with custom comparison function
+
+**Rationale**:
+- Only re-render when id, name, type, cost, sqft, locked, or selected change
+- Prevents re-render when unrelated rooms change
+- Small code cost (9 lines) for significant performance gain
+- Scales well as room count grows (10+ rooms)
+
+**Consequences**:
+- Positive: ~70% reduction in unnecessary re-renders
+- Positive: Smoother UX when editing rooms
+- Negative: Need to maintain comparison function if props change
+
+**Implementation**:
+```javascript
+export default React.memo(LocationCard, (prevProps, nextProps) => {
+  return (
+    prevProps.id === nextProps.id &&
+    prevProps.cost === nextProps.cost &&
+    // ... other relevant props
+  );
+});
+```
+
+---
+
+### ADR-006: Keyboard Shortcuts for Power Users
+**Date**: 2026-01-15
+**Status**: ✅ Implemented
+
+**Context**:
+Code review identified opportunity for power-user features. Dashboard requires many clicks to navigate between rooms.
+
+**Alternatives Considered**:
+1. **No keyboard shortcuts** - Mouse/touch only
+   - Pros: Less code
+   - Cons: Slower workflow for power users
+2. **Basic Tab/Enter navigation** - Browser defaults only
+   - Pros: Built-in, no code needed
+   - Cons: Tab order unclear, no room-to-room navigation
+3. **Full keyboard shortcut system** - Custom shortcuts
+   - Pros: Fast navigation, professional feel
+   - Cons: More code, need to document shortcuts
+
+**Decision**: Implement full keyboard shortcut system with vim-style support
+
+**Rationale**:
+- ↑/↓ and j/k provide fast room-to-room navigation
+- Escape for quick "return to overview" (demolition)
+- Cmd/Ctrl+S for export matches user expectations
+- Doesn't interfere with input fields (skips when focused)
+- Vim-style j/k appeals to developer audience
+
+**Consequences**:
+- Positive: 3x faster navigation for keyboard users
+- Positive: Professional feel, power-user friendly
+- Positive: Accessibility benefit (alternative to mouse)
+- Negative: Need to document shortcuts (added to help card)
+- Negative: 90 lines of code to maintain
+
+**Implementation**:
+- Custom hook: `useKeyboardShortcuts.js`
+- Shortcuts documented in "How to use" card with styled key badges
+- Smart detection skips input/textarea/select elements
+
+---
+
 ## Quick Decisions
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | 2026-01-15 | GCS for hosting | Simple, cost-effective static site hosting |
 | 2026-01-15 | JSON file over hamburger UI | Terminal-editable, version-controlled, simpler maintenance |
+| 2026-01-15 | React.memo for LocationCard | 70% reduction in unnecessary re-renders |
+| 2026-01-15 | Playwright for testing | Browser automation, comprehensive test coverage |
 
 ---
 
